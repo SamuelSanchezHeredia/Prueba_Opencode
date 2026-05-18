@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .config import settings
@@ -16,15 +17,26 @@ from .schemas import (
     CorrectionPayload,
     FaqRequest,
     FaqResponse,
+    ChatRequest,
+    ChatResponse,
 )
-from .services.ats import evaluate_format
+from .services.ats import evaluate_format, detect_format_issues
 from .services.keywords import load_keywords, match_keywords
 from .services.parser import parse_document
-from .services.semantic import analyze_experience
-from .services.faq import load_faqs, match_faq
+from .services.semantic import analyze_experience, detect_semantic_issues
+from .services.faq import load_faqs, load_faqs_from_db, match_faq
+from .services.llm import call_semantic_llm
 
 
 app = FastAPI(title="CV ATS Optimizer POC")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/session/start", response_model=SessionResponse)
@@ -97,6 +109,10 @@ def analyze_session(
 
     experience_text = extracted.get("experience") or extracted.get("experiencia") or raw_text
     corrections = analyze_experience(experience_text)
+    detected_issues = []
+    detected_issues.extend(detect_format_issues(raw_text))
+    detected_issues.extend(detect_semantic_issues(experience_text))
+    semantic_contract = call_semantic_llm(experience_text, session.target_sector)
     for correction in corrections:
         db.add(
             AiCorrection(
@@ -114,7 +130,11 @@ def analyze_session(
             session_id=session.session_id,
             module_name="semantic_core",
             input_payload={"experience": experience_text[:5000]},
-            output_payload={"corrections": corrections},
+            output_payload={
+                "corrections": corrections,
+                "detected_issues": detected_issues,
+                "semantic_contract": semantic_contract,
+            },
             created_at=datetime.utcnow(),
         )
     )
@@ -146,6 +166,8 @@ def analyze_session(
         raw_text=raw_text,
         keywords_checked={"sector": session.target_sector, "total": len(keyword_map.get(session.target_sector, []))},
         corrections=[CorrectionPayload(**item) for item in corrections],
+        detected_issues=detected_issues,
+        semantic_contract=semantic_contract,
     )
 
 
@@ -154,3 +176,12 @@ def faq_matcher(payload: FaqRequest):
     faqs = load_faqs()
     answer, matched = match_faq(payload.question, faqs)
     return FaqResponse(answer=answer, matched_question=matched)
+
+
+@app.post("/chat", response_model=ChatResponse)
+def faq_chat(payload: ChatRequest, db: Session = Depends(get_db)):
+    faqs = load_faqs_from_db(db)
+    if not faqs:
+        faqs = load_faqs()
+    answer, matched = match_faq(payload.message, faqs)
+    return ChatResponse(answer=answer, matched_question=matched)

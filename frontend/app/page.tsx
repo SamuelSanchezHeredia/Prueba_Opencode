@@ -18,6 +18,8 @@ const initialScores = {
   semantic_score: 0,
 };
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
+
 export default function HomePage() {
   const [sector, setSector] = useState(sectors[0]);
   const [file, setFile] = useState<File | null>(null);
@@ -28,7 +30,9 @@ export default function HomePage() {
   const [foundKeywords, setFoundKeywords] = useState<string[]>([]);
   const [faqQuestion, setFaqQuestion] = useState("");
   const [faqAnswer, setFaqAnswer] = useState("");
+  const [chatOpen, setChatOpen] = useState(false);
   const [reportText, setReportText] = useState("");
+  const [issues, setIssues] = useState<string[]>([]);
 
   const chartData = [
     { subject: "ATS", value: scores.ats_score },
@@ -51,7 +55,7 @@ export default function HomePage() {
     payload.append("file", file);
     payload.append("target_sector", sector);
 
-    const startRes = await fetch("http://localhost:8000/session/start", {
+    const startRes = await fetch(`${API_BASE}/session/start`, {
       method: "POST",
       body: payload,
     });
@@ -64,7 +68,7 @@ export default function HomePage() {
     const session = await startRes.json();
     const analyzePayload = new FormData();
     analyzePayload.append("session_id", session.session_id);
-    const analyzeRes = await fetch("http://localhost:8000/session/analyze", {
+    const analyzeRes = await fetch(`${API_BASE}/session/analyze`, {
       method: "POST",
       body: analyzePayload,
     });
@@ -79,6 +83,7 @@ export default function HomePage() {
     setCorrections(analysis.corrections || []);
     setMissingKeywords(analysis.scores.missing_keywords || []);
     setFoundKeywords(analysis.scores.found_keywords || []);
+    setIssues(analysis.detected_issues || []);
     setReportText(
       [
         `Score general: ${analysis.scores.overall_score}`,
@@ -90,6 +95,9 @@ export default function HomePage() {
         ...(analysis.corrections || []).map(
           (item: any) => `- ${item.original_text} -> ${item.suggested_text}`
         ),
+        "",
+        "Issues detectados:",
+        ...(analysis.detected_issues || []).map((item: string) => `- ${item}`),
       ].join("\n")
     );
     setStatus("Analisis completado");
@@ -97,10 +105,10 @@ export default function HomePage() {
 
   const handleFaq = async () => {
     if (!faqQuestion) return;
-    const res = await fetch("http://localhost:8000/faq", {
+    const res = await fetch(`${API_BASE}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: faqQuestion }),
+      body: JSON.stringify({ message: faqQuestion }),
     });
 
     if (!res.ok) {
@@ -124,8 +132,9 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen px-6 py-10">
-      <section className="max-w-6xl mx-auto grid gap-8">
+    <>
+      <main className="min-h-screen px-6 py-10">
+        <section className="max-w-6xl mx-auto grid gap-8">
         <header className="flex flex-col gap-4">
           <p className="text-sm uppercase tracking-[0.2em] text-ember">POC CV ATS</p>
           <h1 className="text-4xl md:text-5xl font-display text-ink">
@@ -257,24 +266,23 @@ export default function HomePage() {
             </div>
 
             <div className="glass rounded-3xl p-8 shadow-soft border border-white/60">
-              <h2 className="text-2xl font-display">FAQ rapido</h2>
-              <div className="mt-4 grid gap-3">
-                <input
-                  value={faqQuestion}
-                  onChange={(event) => setFaqQuestion(event.target.value)}
-                  placeholder="Escribe tu duda..."
-                  className="rounded-xl border border-ink/20 px-4 py-2 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={handleFaq}
-                  className="rounded-xl bg-ink text-white py-2 text-sm font-semibold"
-                >
-                  Preguntar
-                </button>
-                {faqAnswer && <p className="text-sm text-ink/70">{faqAnswer}</p>}
+              <h2 className="text-2xl font-display">Issues detectados</h2>
+              <div className="mt-4 grid gap-2 text-sm text-ink/70">
+                {issues.length === 0 ? (
+                  <p>Sin issues detectados.</p>
+                ) : (
+                  issues.map((issue) => <p key={issue}>• {issue}</p>)
+                )}
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setChatOpen(true)}
+              className="rounded-2xl bg-ink text-white py-3 text-sm font-semibold shadow-soft"
+            >
+              Abrir chat de FAQs
+            </button>
 
             <div className="glass rounded-3xl p-8 shadow-soft border border-white/60">
               <h2 className="text-2xl font-display">Reporte final</h2>
@@ -291,7 +299,34 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
-    </main>
+        </section>
+      </main>
+      {chatOpen && (
+        <div className="fixed bottom-6 right-6 w-[320px] rounded-2xl bg-white shadow-soft border border-ink/10 p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">Chat FAQs</p>
+            <button onClick={() => setChatOpen(false)} className="text-xs text-ink/50">
+              Cerrar
+            </button>
+          </div>
+          <div className="mt-3 grid gap-2">
+            <input
+              value={faqQuestion}
+              onChange={(event) => setFaqQuestion(event.target.value)}
+              placeholder="Escribe tu duda..."
+              className="rounded-xl border border-ink/20 px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              onClick={handleFaq}
+              className="rounded-xl bg-ink text-white py-2 text-sm font-semibold"
+            >
+              Preguntar
+            </button>
+            {faqAnswer && <p className="text-sm text-ink/70">{faqAnswer}</p>}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

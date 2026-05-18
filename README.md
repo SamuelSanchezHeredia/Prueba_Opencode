@@ -36,6 +36,7 @@ psql cv_ats -f backend/migrations/001_init.sql
 
 - `DATABASE_URL` en `backend/app/config.py`
 - `keywords_path` en `backend/app/config.py`
+- `OPENAI_API_KEY` en `backend/app/config.py`
 
 4) Ejecutar API:
 
@@ -72,6 +73,12 @@ Respuesta: `session_id` + secciones detectadas.
 
 Respuesta: scores ATS y keywords + secciones extraidas.
 
+Incluye:
+
+- `corrections`: sugerencias semanticas
+- `detected_issues`: issues de formato y contenido
+- `semantic_contract`: contrato JSON del core semantico
+
 ### POST /faq
 
 `application/json`:
@@ -79,6 +86,18 @@ Respuesta: scores ATS y keywords + secciones extraidas.
 ```json
 {
   "question": "Como mejorar mi CV para ATS?"
+}
+```
+
+Respuesta: respuesta FAQ y coincidencia.
+
+### POST /chat
+
+`application/json`:
+
+```json
+{
+  "message": "Como mejorar mi CV para ATS?"
 }
 ```
 

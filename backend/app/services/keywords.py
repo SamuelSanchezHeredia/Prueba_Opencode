@@ -4,7 +4,10 @@ from typing import Dict, List, Tuple
 
 
 def load_keywords(path: str) -> Dict[str, List[str]]:
-    with open(path, "r", encoding="utf-8") as handle:
+    resolved_path = Path(path)
+    if not resolved_path.is_absolute():
+        resolved_path = Path(__file__).resolve().parents[2] / "data" / resolved_path.name
+    with resolved_path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
 
 

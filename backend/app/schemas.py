@@ -40,6 +40,8 @@ class AnalysisResponse(BaseModel):
     raw_text: str
     keywords_checked: Dict[str, Any]
     corrections: List[CorrectionPayload]
+    detected_issues: List[str]
+    semantic_contract: Dict[str, Any]
 
 
 class FaqRequest(BaseModel):
@@ -47,5 +49,14 @@ class FaqRequest(BaseModel):
 
 
 class FaqResponse(BaseModel):
+    answer: str
+    matched_question: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+class ChatResponse(BaseModel):
     answer: str
     matched_question: str

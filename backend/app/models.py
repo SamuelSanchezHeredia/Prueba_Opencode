@@ -54,3 +54,12 @@ class OperationalLog(Base):
     input_payload = Column(JSON, nullable=True)
     output_payload = Column(JSON, nullable=True)
     created_at = Column(TIMESTAMP, nullable=False)
+
+
+class Faq(Base):
+    __tablename__ = "faqs"
+
+    faq_id = Column(Integer, primary_key=True, autoincrement=True)
+    question = Column(Text, nullable=False)
+    answer = Column(Text, nullable=False)
+    created_at = Column(TIMESTAMP, nullable=False)
