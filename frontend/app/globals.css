@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  font-family: 'Spline Sans', Arial, sans-serif;
+  background: radial-gradient(circle at top, #fff7ea 0%, #f7f2e7 45%, #efe7d8 100%);
+  color: #101820;
+}
+
+.glass {
+  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}

@@ -1,0 +1,24 @@
+{
+  "Tech": [
+    "Python",
+    "Git",
+    "Docker",
+    "SQL",
+    "FastAPI",
+    "PostgreSQL"
+  ],
+  "Ventas": [
+    "CRM",
+    "Pipeline",
+    "Prospeccion",
+    "Cierre",
+    "KPI"
+  ],
+  "Marketing": [
+    "SEO",
+    "SEM",
+    "Google Analytics",
+    "CAC",
+    "Conversion"
+  ]
+}
