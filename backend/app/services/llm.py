@@ -13,16 +13,16 @@ SYSTEM_PROMPT = (
 
 
 def call_semantic_llm(experience_text: str, target_sector: str) -> Dict[str, Any]:
-    if not settings.openai_api_key:
+    if not settings.groq_api_key:
         return {
             "primary_hypothesis": "Sin API key de LLM configurada.",
             "alternatives": [],
-            "next_check": "Configurar OPENAI_API_KEY para analisis semantico real.",
+            "next_check": "Configurar GROQ_API_KEY para analisis semantico real.",
             "short_explanation": "Se uso modo stub.",
             "confidence": 0.0,
         }
 
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = OpenAI(api_key=settings.groq_api_key, base_url=settings.groq_base_url)
     prompt = (
         "Sector objetivo: "
         + target_sector
@@ -44,7 +44,7 @@ def call_semantic_llm(experience_text: str, target_sector: str) -> Dict[str, Any
     )
 
     response = client.responses.create(
-        model=settings.openai_model,
+        model=settings.groq_model,
         input=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
