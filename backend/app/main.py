@@ -7,11 +7,21 @@ from sqlalchemy.orm import Session
 
 from .config import settings
 from .db import get_db
-from .models import CvSectionExtracted, CvSession
-from .schemas import AnalysisResponse, ScoreResponse, SectionPayload, SessionResponse
+from .models import CvSectionExtracted, CvSession, AiCorrection, OperationalLog
+from .schemas import (
+    AnalysisResponse,
+    ScoreResponse,
+    SectionPayload,
+    SessionResponse,
+    CorrectionPayload,
+    FaqRequest,
+    FaqResponse,
+)
 from .services.ats import evaluate_format
 from .services.keywords import load_keywords, match_keywords
 from .services.parser import parse_document
+from .services.semantic import analyze_experience
+from .services.faq import load_faqs, match_faq
 
 
 app = FastAPI(title="CV ATS Optimizer POC")
@@ -83,12 +93,38 @@ def analyze_session(
 
     ats_score, missing_sections = evaluate_format(raw_text)
     keyword_map = load_keywords(settings.keywords_path)
-    keyword_score, _, missing_keywords = match_keywords(raw_text, session.target_sector, keyword_map)
+    keyword_score, found_keywords, missing_keywords = match_keywords(raw_text, session.target_sector, keyword_map)
 
-    overall_score = int((ats_score * 0.6) + (keyword_score * 0.4))
+    experience_text = extracted.get("experience") or extracted.get("experiencia") or raw_text
+    corrections = analyze_experience(experience_text)
+    for correction in corrections:
+        db.add(
+            AiCorrection(
+                session_id=session.session_id,
+                original_text=correction["original_text"],
+                suggested_text=correction["suggested_text"],
+                explanation=correction["explanation"],
+                category=correction["category"],
+                created_at=datetime.utcnow(),
+            )
+        )
+
+    db.add(
+        OperationalLog(
+            session_id=session.session_id,
+            module_name="semantic_core",
+            input_payload={"experience": experience_text[:5000]},
+            output_payload={"corrections": corrections},
+            created_at=datetime.utcnow(),
+        )
+    )
+
+    semantic_score = 0 if not corrections else max(40, 100 - (len(corrections) * 10))
+    overall_score = int((ats_score * 0.4) + (keyword_score * 0.3) + (semantic_score * 0.3))
 
     session.ats_score = ats_score
     session.keyword_score = keyword_score
+    session.semantic_score = semantic_score
     session.overall_score = overall_score
     session.status = "analyzed"
     db.commit()
@@ -96,9 +132,11 @@ def analyze_session(
     score = ScoreResponse(
         ats_score=ats_score,
         keyword_score=keyword_score,
+        semantic_score=semantic_score,
         overall_score=overall_score,
         missing_sections=missing_sections,
         missing_keywords=missing_keywords,
+        found_keywords=found_keywords,
     )
 
     return AnalysisResponse(
@@ -107,4 +145,12 @@ def analyze_session(
         extracted_sections=extracted,
         raw_text=raw_text,
         keywords_checked={"sector": session.target_sector, "total": len(keyword_map.get(session.target_sector, []))},
+        corrections=[CorrectionPayload(**item) for item in corrections],
     )
+
+
+@app.post("/faq", response_model=FaqResponse)
+def faq_matcher(payload: FaqRequest):
+    faqs = load_faqs()
+    answer, matched = match_faq(payload.question, faqs)
+    return FaqResponse(answer=answer, matched_question=matched)

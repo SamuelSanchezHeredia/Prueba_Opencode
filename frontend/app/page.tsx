@@ -15,6 +15,7 @@ const initialScores = {
   overall_score: 0,
   ats_score: 0,
   keyword_score: 0,
+  semantic_score: 0,
 };
 
 export default function HomePage() {
@@ -22,6 +23,12 @@ export default function HomePage() {
   const [file, setFile] = useState<File | null>(null);
   const [scores, setScores] = useState(initialScores);
   const [status, setStatus] = useState("Esperando CV...");
+  const [corrections, setCorrections] = useState<any[]>([]);
+  const [missingKeywords, setMissingKeywords] = useState<string[]>([]);
+  const [foundKeywords, setFoundKeywords] = useState<string[]>([]);
+  const [faqQuestion, setFaqQuestion] = useState("");
+  const [faqAnswer, setFaqAnswer] = useState("");
+  const [reportText, setReportText] = useState("");
 
   const chartData = [
     { subject: "ATS", value: scores.ats_score },
@@ -69,7 +76,51 @@ export default function HomePage() {
 
     const analysis = await analyzeRes.json();
     setScores(analysis.scores);
+    setCorrections(analysis.corrections || []);
+    setMissingKeywords(analysis.scores.missing_keywords || []);
+    setFoundKeywords(analysis.scores.found_keywords || []);
+    setReportText(
+      [
+        `Score general: ${analysis.scores.overall_score}`,
+        `ATS: ${analysis.scores.ats_score}`,
+        `Keywords: ${analysis.scores.keyword_score}`,
+        `Semantica: ${analysis.scores.semantic_score}`,
+        "",
+        "Sugerencias:",
+        ...(analysis.corrections || []).map(
+          (item: any) => `- ${item.original_text} -> ${item.suggested_text}`
+        ),
+      ].join("\n")
+    );
     setStatus("Analisis completado");
+  };
+
+  const handleFaq = async () => {
+    if (!faqQuestion) return;
+    const res = await fetch("http://localhost:8000/faq", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: faqQuestion }),
+    });
+
+    if (!res.ok) {
+      setFaqAnswer("No se pudo responder la pregunta.");
+      return;
+    }
+
+    const data = await res.json();
+    setFaqAnswer(data.answer);
+  };
+
+  const downloadReport = () => {
+    if (!reportText) return;
+    const blob = new Blob([reportText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "reporte_cv.txt";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -158,8 +209,85 @@ export default function HomePage() {
               <div className="mt-6 grid gap-2 text-sm text-ink/70">
                 <p>ATS: {scores.ats_score}</p>
                 <p>Keywords: {scores.keyword_score}</p>
-                <p>Semantica: {scores.overall_score === 0 ? 0 : 0}</p>
+                <p>Semantica: {scores.semantic_score}</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6">
+          <div className="glass rounded-3xl p-8 shadow-soft border border-white/60">
+            <h2 className="text-2xl font-display">Mejoras sugeridas</h2>
+            <div className="mt-6 grid gap-4">
+              {corrections.length === 0 ? (
+                <p className="text-sm text-ink/60">Sin sugerencias por ahora.</p>
+              ) : (
+                corrections.map((item, index) => (
+                  <div key={index} className="grid md:grid-cols-2 gap-4 bg-white/70 rounded-2xl p-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-ink/50">Original</p>
+                      <p className="mt-2 text-sm text-ink/80">{item.original_text}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-ink/50">Sugerido</p>
+                      <p className="mt-2 text-sm text-ink/80">{item.suggested_text}</p>
+                      <p className="mt-2 text-xs text-ink/50">{item.explanation}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-6">
+            <div className="glass rounded-3xl p-8 shadow-soft border border-white/60">
+              <h2 className="text-2xl font-display">Nube de keywords</h2>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {foundKeywords.map((kw) => (
+                  <span key={kw} className="rounded-full bg-sage/20 text-sage px-3 py-1 text-xs">
+                    {kw}
+                  </span>
+                ))}
+                {missingKeywords.map((kw) => (
+                  <span key={kw} className="rounded-full bg-ink/10 text-ink/50 px-3 py-1 text-xs">
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl p-8 shadow-soft border border-white/60">
+              <h2 className="text-2xl font-display">FAQ rapido</h2>
+              <div className="mt-4 grid gap-3">
+                <input
+                  value={faqQuestion}
+                  onChange={(event) => setFaqQuestion(event.target.value)}
+                  placeholder="Escribe tu duda..."
+                  className="rounded-xl border border-ink/20 px-4 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={handleFaq}
+                  className="rounded-xl bg-ink text-white py-2 text-sm font-semibold"
+                >
+                  Preguntar
+                </button>
+                {faqAnswer && <p className="text-sm text-ink/70">{faqAnswer}</p>}
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl p-8 shadow-soft border border-white/60">
+              <h2 className="text-2xl font-display">Reporte final</h2>
+              <p className="mt-2 text-sm text-ink/60">
+                Descarga un resumen en texto plano con scores y sugerencias.
+              </p>
+              <button
+                type="button"
+                onClick={downloadReport}
+                className="mt-4 rounded-xl bg-ember text-white py-2 text-sm font-semibold"
+              >
+                Descargar reporte
+              </button>
             </div>
           </div>
         </div>

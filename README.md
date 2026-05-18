@@ -72,7 +72,19 @@ Respuesta: `session_id` + secciones detectadas.
 
 Respuesta: scores ATS y keywords + secciones extraidas.
 
+### POST /faq
+
+`application/json`:
+
+```json
+{
+  "question": "Como mejorar mi CV para ATS?"
+}
+```
+
+Respuesta: respuesta FAQ y coincidencia.
+
 ## Notas de la POC
 
 - Semana 1 y 2 cubiertas: ingestion, parsing, reglas ATS y matching de keywords.
-- Pendiente: Core semantico, logs operacionales y FAQ matcher.
+- Semana 3 y 4 parcial: core semantico simplificado, logs operacionales y FAQ matcher.

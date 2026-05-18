@@ -23,6 +23,14 @@ class ScoreResponse(BaseModel):
     overall_score: int
     missing_sections: List[str]
     missing_keywords: List[str]
+    found_keywords: List[str] = []
+
+
+class CorrectionPayload(BaseModel):
+    original_text: str
+    suggested_text: str
+    explanation: str
+    category: str
 
 
 class AnalysisResponse(BaseModel):
@@ -31,3 +39,13 @@ class AnalysisResponse(BaseModel):
     extracted_sections: Dict[str, str]
     raw_text: str
     keywords_checked: Dict[str, Any]
+    corrections: List[CorrectionPayload]
+
+
+class FaqRequest(BaseModel):
+    question: str
+
+
+class FaqResponse(BaseModel):
+    answer: str
+    matched_question: str
