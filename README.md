@@ -36,8 +36,8 @@ psql cv_ats -f backend/migrations/001_init.sql
 
 - `DATABASE_URL` en `backend/app/config.py`
 - `keywords_path` en `backend/app/config.py`
-- `GROQ_API_KEY` en `backend/app/config.py`
-- `GROQ_MODEL` en `backend/app/config.py`
+- `GROQ_API_KEY` en `backend/app/config.py` o `backend/.env`
+- `GROQ_MODEL` en `backend/app/config.py` o `backend/.env`
 
 4) Ejecutar API:
 
