@@ -88,3 +88,11 @@ Respuesta: respuesta FAQ y coincidencia.
 
 - Semana 1 y 2 cubiertas: ingestion, parsing, reglas ATS y matching de keywords.
 - Semana 3 y 4 parcial: core semantico simplificado, logs operacionales y FAQ matcher.
+
+## QA
+
+Se incluye un runner basico para validar fixtures de texto:
+
+```bash
+python3 backend/qa/run_qa.py --fixtures backend/qa/expected_issues.json --text-dir backend/qa/fixtures_text
+```

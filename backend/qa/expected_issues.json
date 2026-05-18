@@ -1,0 +1,17 @@
+{
+  "CV_Junior_Developer_Error_Format.pdf": {
+    "target_sector": "Tech",
+    "expected_issues": [
+      "Uso de barras de progreso graficas",
+      "Falta de verbos de accion",
+      "Sin metricas de proyectos"
+    ]
+  },
+  "CV_Senior_Marketing_No_Metrics.docx": {
+    "target_sector": "Marketing",
+    "expected_issues": [
+      "Ausencia de porcentajes de conversion",
+      "Habilidades mezcladas con contacto"
+    ]
+  }
+}
