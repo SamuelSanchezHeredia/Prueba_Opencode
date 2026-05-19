@@ -3,6 +3,7 @@
 .opencode/
 __pycache__/
 *.pyc
+.ruff_cache/
 .venv/
 node_modules/
 .next/

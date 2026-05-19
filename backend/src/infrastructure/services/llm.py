@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from openai import OpenAI
 
-from ..config import settings
+from src.config import settings
 
 
 SYSTEM_PROMPT = (

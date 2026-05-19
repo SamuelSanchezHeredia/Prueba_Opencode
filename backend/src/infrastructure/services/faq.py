@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from ..config import settings
+from src.config import settings
 
 
 def load_faqs() -> List[Dict[str, str]]:

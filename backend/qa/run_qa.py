@@ -2,9 +2,9 @@ import argparse
 import json
 from pathlib import Path
 
-from app.services.ats import evaluate_format
-from app.services.keywords import load_keywords, match_keywords
-from app.services.semantic import analyze_experience
+from src.infrastructure.services.ats import evaluate_format
+from src.infrastructure.services.keywords import load_keywords, match_keywords
+from src.infrastructure.services.semantic import analyze_experience
 
 
 def load_expected(path: Path):
