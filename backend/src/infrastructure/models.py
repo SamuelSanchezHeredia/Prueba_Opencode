@@ -1,6 +1,7 @@
 import uuid
 
 from sqlalchemy import JSON, TIMESTAMP, Column, ForeignKey, Integer, String, Text
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
 
@@ -62,4 +63,22 @@ class Faq(Base):
     faq_id = Column(Integer, primary_key=True, autoincrement=True)
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
+    created_at = Column(TIMESTAMP, nullable=False)
+
+
+class FaqEmbedding(Base):
+    __tablename__ = "faq_embeddings"
+
+    faq_id = Column(Integer, ForeignKey("faqs.faq_id", ondelete="CASCADE"), primary_key=True)
+    embedding = Column(Vector(384), nullable=False)
+    created_at = Column(TIMESTAMP, nullable=False)
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    message_id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(UUID(as_uuid=True), ForeignKey("cv_sessions.session_id", ondelete="SET NULL"), nullable=True)
+    role = Column(String(20), nullable=False)
+    content = Column(Text, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False)

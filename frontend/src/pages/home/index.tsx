@@ -13,7 +13,7 @@ import { ReportPanel } from "../../widgets/report-panel";
 import { ChatLauncher } from "../../widgets/chat-launcher";
 import { ChatWidget } from "../../widgets/chat-widget";
 import { analyzeCv, startSession } from "../../shared/api/cv";
-import { AnalysisResult, InitialScores } from "../../shared/model/types";
+import { AnalysisResult, ChatMessage, InitialScores } from "../../shared/model/types";
 
 const sectors = ["Tech", "Ventas", "Marketing"];
 
@@ -36,6 +36,8 @@ export default function HomePage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [faqQuestion, setFaqQuestion] = useState("");
   const [faqAnswer, setFaqAnswer] = useState("");
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [reportText, setReportText] = useState("");
 
   const handleUpload = async () => {
@@ -48,6 +50,7 @@ export default function HomePage() {
       return;
     }
 
+    setCurrentSessionId(session.session_id);
     const analysis = await analyzeCv(session.session_id);
     if (!analysis) {
       setStatus("Error al analizar el CV");
@@ -120,9 +123,12 @@ export default function HomePage() {
         <ChatWidget
           question={faqQuestion}
           answer={faqAnswer}
+          history={chatHistory}
           onQuestionChange={setFaqQuestion}
           onAnswerChange={setFaqAnswer}
+          onHistoryChange={setChatHistory}
           onClose={() => setChatOpen(false)}
+          sessionId={currentSessionId}
         />
       )}
     </>

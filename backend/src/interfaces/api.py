@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
@@ -7,8 +8,9 @@ from sqlalchemy.orm import Session
 
 from src.config import settings
 from src.infrastructure.db import get_db
-from src.infrastructure.models import CvSectionExtracted, CvSession
-from src.infrastructure.services.faq import load_faqs, load_faqs_from_db, match_faq
+from src.infrastructure.models import CvSectionExtracted, CvSession, ChatMessage
+from src.infrastructure.services.faq import load_faqs, load_faqs_from_db, match_faq, fuzzy_match
+from src.infrastructure.services.faq_semantic import build_faq_embeddings, semantic_match
 from src.infrastructure.services.parser import parse_document
 from src.interfaces.schemas import (
     AnalysisResponse,
@@ -108,5 +110,43 @@ def faq_chat(payload: ChatRequest, db: Session = Depends(get_db)):
     faqs = load_faqs_from_db(db)
     if not faqs:
         faqs = load_faqs()
-    answer, matched = match_faq(payload.message, faqs)
-    return ChatResponse(answer=answer, matched_question=matched)
+    build_faq_embeddings(db, faqs)
+
+    answer, matched, score = fuzzy_match(payload.message, faqs)
+    semantic_answer, semantic_question, distance = semantic_match(db, payload.message)
+
+    if semantic_answer and distance < 0.35:
+        answer = semantic_answer
+        matched = semantic_question
+        score = 1 - distance
+
+    if payload.session_id:
+        db.add(
+            ChatMessage(
+                session_id=payload.session_id,
+                role="user",
+                content=payload.message,
+                created_at=datetime.utcnow(),
+            )
+        )
+        db.add(
+            ChatMessage(
+                session_id=payload.session_id,
+                role="assistant",
+                content=answer,
+                created_at=datetime.utcnow(),
+            )
+        )
+        db.commit()
+
+    history = []
+    if payload.session_id:
+        rows = (
+            db.query(ChatMessage)
+            .filter(ChatMessage.session_id == payload.session_id)
+            .order_by(ChatMessage.created_at)
+            .all()
+        )
+        history = [{"role": row.role, "content": row.content} for row in rows]
+
+    return ChatResponse(answer=answer, matched_question=matched, score=score, history=history)

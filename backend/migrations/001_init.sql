@@ -1,4 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS cv_sessions (
     session_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -50,9 +51,26 @@ CREATE TABLE IF NOT EXISTS faqs (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS faq_embeddings (
+    faq_id BIGINT PRIMARY KEY,
+    embedding vector(384) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (faq_id) REFERENCES faqs(faq_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    message_id BIGSERIAL PRIMARY KEY,
+    session_id UUID,
+    role VARCHAR(20) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (session_id) REFERENCES cv_sessions(session_id) ON DELETE SET NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_cv_sessions_status ON cv_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_sections_session_id ON cv_sections_extracted(session_id);
 CREATE INDEX IF NOT EXISTS idx_corrections_session_id ON ai_corrections(session_id);
 CREATE INDEX IF NOT EXISTS idx_logs_module ON operational_logs(module_name);
 CREATE INDEX IF NOT EXISTS idx_faqs_question ON faqs(question);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_faqs_question ON faqs(question);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id);

@@ -26,6 +26,18 @@ export type AnalysisResult = {
   semantic_contract: Record<string, unknown>;
 };
 
+export type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type ChatResponse = {
+  answer: string;
+  matched_question: string;
+  score?: number;
+  history?: ChatMessage[];
+};
+
 export type SessionStartResponse = {
   session_id: string;
   filename: string;

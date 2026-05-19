@@ -1,5 +1,5 @@
 import { postForm, postJson } from "./client";
-import { AnalysisResult, SessionStartResponse } from "../model/types";
+import { AnalysisResult, ChatResponse, SessionStartResponse } from "../model/types";
 
 export async function startSession(file: File, target_sector: string) {
   const payload = new FormData();
@@ -14,6 +14,6 @@ export async function analyzeCv(session_id: string) {
   return postForm<AnalysisResult>("/session/analyze", payload);
 }
 
-export async function askFaq(message: string) {
-  return postJson<{ answer: string }>("/chat", { message });
+export async function askFaq(message: string, session_id?: string) {
+  return postJson<ChatResponse>("/chat", { message, session_id });
 }

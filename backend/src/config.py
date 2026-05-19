@@ -18,6 +18,7 @@ class Settings(BaseModel):
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
     groq_model: str = os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
     groq_base_url: str = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+    embeddings_model: str = os.getenv("EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
 
 settings = Settings()

@@ -55,8 +55,11 @@ class FaqResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    session_id: UUID | None = None
 
 
 class ChatResponse(BaseModel):
     answer: str
     matched_question: str
+    score: float | None = None
+    history: List[Dict[str, Any]] | None = None

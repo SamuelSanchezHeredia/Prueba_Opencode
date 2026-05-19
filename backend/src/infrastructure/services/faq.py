@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+from rapidfuzz import fuzz
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -19,6 +20,19 @@ def load_faqs() -> List[Dict[str, str]]:
 def load_faqs_from_db(db: Session) -> List[Dict[str, str]]:
     rows = db.execute(text("SELECT question, answer FROM faqs ORDER BY faq_id"))
     return [{"question": row[0], "answer": row[1]} for row in rows]
+
+
+def fuzzy_match(question: str, faqs: List[Dict[str, str]]) -> Tuple[str, str, int]:
+    best_score = -1
+    best_answer = ""
+    best_question = ""
+    for item in faqs:
+        score = fuzz.token_set_ratio(question.lower(), item["question"].lower())
+        if score > best_score:
+            best_score = score
+            best_answer = item["answer"]
+            best_question = item["question"]
+    return best_answer, best_question, best_score
 
 
 def match_faq(question: str, faqs: List[Dict[str, str]]) -> Tuple[str, str]:
