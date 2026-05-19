@@ -30,6 +30,7 @@ pip install -r backend/requirements.txt
 ```bash
 createdb cv_ats
 psql cv_ats -f backend/migrations/001_init.sql
+psql cv_ats -f backend/migrations/002_seed_faqs.sql
 ```
 
 3) Configurar variables (opcional):
@@ -103,6 +104,18 @@ Respuesta: respuesta FAQ y coincidencia.
 ```
 
 Respuesta: respuesta FAQ y coincidencia.
+
+## Seed FAQs (opcional)
+
+```bash
+psql cv_ats -f backend/migrations/002_seed_faqs.sql
+```
+
+O via script:
+
+```bash
+python3 backend/scripts/seed_faqs.py --database-url "postgresql://samuelsanchezheredia@localhost:5432/cv_ats"
+```
 
 ## Notas de la POC
 

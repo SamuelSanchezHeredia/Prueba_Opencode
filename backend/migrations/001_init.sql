@@ -50,13 +50,6 @@ CREATE TABLE IF NOT EXISTS faqs (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO faqs (question, answer)
-VALUES
-    ('Como mejorar mi CV para ATS?', 'Evita graficos, usa texto plano, secciones claras y palabras clave del sector.'),
-    ('Debo incluir foto en el CV?', 'En la mayoria de procesos ATS no es necesaria; prioriza contenido relevante.'),
-    ('Cuantas paginas debe tener el CV?', '1-2 paginas es lo habitual, con foco en logros cuantificables.')
-ON CONFLICT (question) DO NOTHING;
-
 CREATE INDEX IF NOT EXISTS idx_cv_sessions_status ON cv_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_sections_session_id ON cv_sections_extracted(session_id);
 CREATE INDEX IF NOT EXISTS idx_corrections_session_id ON ai_corrections(session_id);
